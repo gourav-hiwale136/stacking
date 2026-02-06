@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -8,28 +7,37 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const res = await axios.post(
-        "http://localhost:4444/api/auth/login",
-        { email, password }
-      );
+  try {
+    const res = await fetch("http://localhost:4444/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
 
-      // ✅ SAVE TOKEN
-      localStorage.setItem("token", res.data.token);
+    if (data.token) {
+      // Save token
+      localStorage.setItem("token", data.token);
 
-      // ✅ SAVE USER (THIS WAS MISSING)
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      // Decode JWT to read role
+      const payload = JSON.parse(atob(data.token.split(".")[1]));
+      const userRole = payload.role;
 
-      alert("Login successful ✅");
-
-      // ✅ REDIRECT
-      navigate("/dashboard");
-    } catch (err) {
-      alert(err.response?.data?.error || "Login failed");
+      // Redirect based on role
+      if (userRole === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+        window.location.reload();
+      }
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -64,7 +72,7 @@ const Login = () => {
             className="text-green-600 cursor-pointer ml-1"
             onClick={() => navigate("/register")}
           >
-            Register
+            Sign Up
           </span>
         </p>
       </div>

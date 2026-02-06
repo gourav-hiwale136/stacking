@@ -251,7 +251,6 @@ const deleteStack = async (req, res) => {
 
     if (!stackedUsers || stackedUsers.length === 0) {
       return res.status(404).json({
-        success: false,
         message: "No stacked users found",
       });
     }
