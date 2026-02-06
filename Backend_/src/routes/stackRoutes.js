@@ -3,7 +3,6 @@ import {
   createStack,
   stacked,
   getStack,
-  addReward,
   claimRewards,
   updateBalance,
   deleteStack,
@@ -20,8 +19,6 @@ stackRouter.post("/add/:userId", createStack);
 stackRouter.post("/stake/:userId", authMiddleware, allowRoles("user"), stacked);
 
 stackRouter.get("/get/:userId", authMiddleware, allowRoles("user"),getStack);
-
-stackRouter.post("/add-reward", addReward);
 
 stackRouter.post("/claim/:userId", claimRewards);
 

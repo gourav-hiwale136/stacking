@@ -17,8 +17,8 @@ const createStack = async (req, res) => {
     const stack = await UserStack.create({
   userId,
   balance: balance ?? 100,
-  stake: balance ?? 100, // 👈 auto‑stake all balance
-  lastStakeUpdated: new Date(), // 👈 start interest timer
+  stake: 0, // 👈 auto‑stake all balance
+  lastStakeUpdated: null // 👈 start interest timer
 });
 
 
@@ -126,46 +126,6 @@ const getStack = async (req, res) => {
 };
 
 
-
-const addReward = async (req, res) => {
-  try {
-    const { userId, amount, rewardType = "cash" } = req.body;
-
-    const stack = await UserStack.findOne({ userId });
-    if (!stack) {
-      return res.status(404).json({
-        message: "No stack found for this user"
-      });
-    }
-
-    // 👇 apply interest first
-    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
-    if (interest > 0) {
-      stack.AvailableClaim += interest;
-      stack.lastStakeUpdated = newLastStakeUpdated;
-    }
-
-    
-    stack.rewards.push({
-      time: Date.now(), 
-      amount,
-    });
-
-    stack.unclaimedRewards += amount;
-
-    await stack.save();
-
-    res.status(200).json({
-      message: "Reward added",
-      stack,
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message
-    });
-  }
-};
-
 // 4. Claim rewards (user clicks “Claim”)
 const claimRewards = async (req, res) => {
   try {
@@ -185,18 +145,17 @@ const claimRewards = async (req, res) => {
       stack.lastStakeUpdated = newLastStakeUpdated;
     }
 
-    const rewardsToClaim = (stack.unclaimedRewards || 0) + (stack.AvailableClaim || 0);
-
-    if (rewardsToClaim <= 0) {
+    
+    if (stack.AvailableClaim <= 0) {
       return res.status(400).json({
         message: "No rewards to claim",
       });
     }
-
+    const rewardsToClaim = (stack.AvailableClaim || 0);
+    
     stack.balance += rewardsToClaim;
     stack.claimedRewards += rewardsToClaim;
     stack.totalEarned += rewardsToClaim;
-    stack.unclaimedRewards = 0;
     stack.AvailableClaim = 0;
 
     await stack.save();
@@ -315,7 +274,6 @@ export {
   stacked,
   ApplyInterest,
   getStack,
-  addReward,
   claimRewards,
   updateBalance,
   deleteStack,
