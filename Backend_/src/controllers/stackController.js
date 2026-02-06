@@ -15,9 +15,12 @@ const createStack = async (req, res) => {
 
     // 2️⃣ Create
     const stack = await UserStack.create({
-      userId,
-      balance: balance ?? 100,
-    });
+  userId,
+  balance: balance ?? 100,
+  stake: balance ?? 100, // 👈 auto‑stake all balance
+  lastStakeUpdated: new Date(), // 👈 start interest timer
+});
+
 
     res.status(201).json({
       message: "Stack created successfully",
@@ -32,6 +35,68 @@ const createStack = async (req, res) => {
 };
 
 
+const stacked = async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+
+    const stack = await UserStack.findOne({ userId });
+    if (!stack) {
+      return res.status(404).json({
+        message: "No stack found for this user",
+      });
+    }
+
+    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
+    if (interest > 0) {
+      stack.AvailableClaim += interest;
+      stack.lastStakeUpdated = newLastStakeUpdated;
+    }
+
+    stack.stake += amount;
+    stack.balance -= amount;
+    stack.lastStakeUpdated = new Date();
+
+    await stack.save();
+
+    res.status(200).json({
+      message: "Stake placed successfully",
+      stack,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+
+
+const ApplyInterest = (stack) => {
+  if (!stack.stake || !stack.lastStakeUpdated) {
+    if (!stack.stake) return { message: "Stake not added", amount: 0 };
+    if (!stack.lastStakeUpdated) return { message: "Interval not completed", amount: 0 };
+  }
+
+  const now = new Date();
+  const last = new Date(stack.lastStakeUpdated);
+  const diff = now - last;
+  const time = 10 * 60 * 1000; // 10 minutes in ms
+  const intervals = Math.floor(diff / time);
+
+  if (intervals <= 0) {
+    return { message: "Interval not completed", amount: 0 };
+  }
+
+  const total_interest = (stack.stake || 0) * 0.01 * intervals;
+  return {
+    message: `${total_interest} added to AvailableClaim`,
+    amount: total_interest,
+    newLastStakeUpdated: new Date(last.getTime() + time * intervals),
+  };
+};
+
+
+
 
 const getStack = async (req, res) => {
   try {
@@ -44,13 +109,22 @@ const getStack = async (req, res) => {
       });
     }
 
-    res.status(200).json({stack});
+    // 👇 apply pending interest before returning
+    const { amount, newLastStakeUpdated } = ApplyInterest(stack);
+    if (amount > 0) {
+      stack.AvailableClaim += amount;
+      stack.lastStakeUpdated = newLastStakeUpdated;
+      await stack.save();
+    }
+
+    res.status(200).json({ stack });
   } catch (error) {
     res.status(500).json({
       message: error.message,
     });
   }
 };
+
 
 
 const addReward = async (req, res) => {
@@ -62,6 +136,13 @@ const addReward = async (req, res) => {
       return res.status(404).json({
         message: "No stack found for this user"
       });
+    }
+
+    // 👇 apply interest first
+    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
+    if (interest > 0) {
+      stack.AvailableClaim += interest;
+      stack.lastStakeUpdated = newLastStakeUpdated;
     }
 
     
@@ -93,23 +174,30 @@ const claimRewards = async (req, res) => {
     const stack = await UserStack.findOne({ userId });
     if (!stack) {
       return res.status(404).json({
-        message: "No stack found for this user"
+        message: "No stack found for this user",
       });
     }
 
-    if (stack.unclaimedRewards <= 0) {
+    // 👇 apply pending interest first
+    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
+    if (interest > 0) {
+      stack.AvailableClaim += interest;
+      stack.lastStakeUpdated = newLastStakeUpdated;
+    }
+
+    const rewardsToClaim = (stack.unclaimedRewards || 0) + (stack.AvailableClaim || 0);
+
+    if (rewardsToClaim <= 0) {
       return res.status(400).json({
         message: "No rewards to claim",
       });
     }
-    
-    
-    const rewardsToClaim = stack.unclaimedRewards;
-    
-    stack.balance += stack.unclaimedRewards;
+
+    stack.balance += rewardsToClaim;
     stack.claimedRewards += rewardsToClaim;
     stack.totalEarned += rewardsToClaim;
     stack.unclaimedRewards = 0;
+    stack.AvailableClaim = 0;
 
     await stack.save();
 
@@ -125,6 +213,7 @@ const claimRewards = async (req, res) => {
 };
 
 
+
 // 5. Update balance (for example, when user stakes more money)
 const updateBalance = async (req, res) => {
   try {
@@ -132,7 +221,7 @@ const updateBalance = async (req, res) => {
 
     if (!newBalance || newBalance <= 0) {
       return res.status(400).json({
-        message: "New balance amount must be greater than 0",
+        message: "New balance",
       });
     }
 
@@ -143,23 +232,35 @@ const updateBalance = async (req, res) => {
       });
     }
 
-    // ✅ ADD to existing balance
+    // 👇 apply pending interest before changing stake
+    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
+    if (interest > 0) {
+      stack.AvailableClaim += interest;
+      stack.lastStakeUpdated = newLastStakeUpdated;
+    }
+
+    // 👇 treat newBalance as additional stake
+    stack.stake += newBalance;
     stack.balance += newBalance;
+
+    stack.lastStakeUpdated = new Date(); // reset timer
 
     await stack.save();
 
     res.status(200).json({
-      message: "Balance added successfully",
-      previousBalance: stack.balance - newBalance,
+      message: "Balance and stake updated successfully",
+      previousStake: stack.stake - newBalance,
       addedAmount: newBalance,
+      currentStake: stack.stake,
       currentBalance: stack.balance,
     });
   } catch (error) {
     res.status(500).json({
-      message: error.message
+      message: error.message,
     });
   }
 };
+
 
 
 const deleteStack = async (req, res) => {
@@ -211,6 +312,8 @@ const deleteStack = async (req, res) => {
 };
 export {
   createStack,
+  stacked,
+  ApplyInterest,
   getStack,
   addReward,
   claimRewards,

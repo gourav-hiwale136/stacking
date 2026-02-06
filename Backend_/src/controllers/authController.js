@@ -17,10 +17,10 @@ const registerUser = async (req, res) => {
             role 
         });
 
-        await UserStack.create({
-        userId: user._id,
-        balance: 100,
-  });
+//         await UserStack.create({
+//         userId: user._id,
+//         balance: 100,
+//   });
         await user.save();
         res.status(201).json({ message: 'User registered successfully', user });
     } catch (error) {

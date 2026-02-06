@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createStack,
+  stacked,
   getStack,
   addReward,
   claimRewards,
@@ -14,18 +15,24 @@ import allowRoles from "../middlewares/roleMiddleware.js";
 const stackRouter = express.Router();
 
 
-stackRouter.post("/create", createStack);
+stackRouter.post("/add/:userId", createStack);
 
-stackRouter.get("/:userId", getStack);
+stackRouter.post("/stake/:userId", authMiddleware, allowRoles("user"), stacked);
+
+stackRouter.get("/get/:userId", authMiddleware, allowRoles("user"),getStack);
 
 stackRouter.post("/add-reward", addReward);
 
-stackRouter.post("/claim", claimRewards);
+stackRouter.post("/claim/:userId", claimRewards);
 
 stackRouter.put("/update-balance", updateBalance)
 
 stackRouter.delete("/delete/:userId", authMiddleware,allowRoles("admin"),deleteStack);
 
-stackRouter.get("/admin/stacked-users", authMiddleware,allowRoles("admin"),getStackedUser);
+stackRouter.get("/admin/staked-users", authMiddleware,allowRoles("admin"),getStackedUser);
 
 export default stackRouter;
+
+
+// // OPTIONAL: explicit stake route
+// router.post("/stack/stake", stakeHC);

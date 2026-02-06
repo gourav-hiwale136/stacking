@@ -1,24 +1,25 @@
 import mongoose from "mongoose";
 
-
-const userStackSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  balance: { type: Number, default: 100 },  
-  totalEarned: { type: Number, default: 0 },
-  claimedRewards: { type: Number, default: 0 },
-  unclaimedRewards: { type: Number, default: 0 },
-  rewardType: { type: String, enum: ['cash'] },
-  rewards: [{
-    time: Number,  // 10min cycle number
-    amount: Number,  // 1% reward
-  }],
-
-},   
-
-{ timestamps: true }
+const userStackSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    balance: { type: Number, default: 100 },  
+    totalEarned: { type: Number, default: 0 },
+    claimedRewards: { type: Number, default: 0 },
+    unclaimedRewards: { type: Number, default: 0 },
+    rewardType: { type: String, enum: ['cash'], default: 'cash' },
+    rewards: [
+      {
+        time: { type: Date, default: null },  // 10min cycle number
+        amount: Number,                       // 1% reward
+      }
+    ],
+    stake: { type: Number, default: 0 },              // amount currently “locked” for interest
+    lastStakeUpdated: { type: Date, default: null },                 // last time interest was applied
+    AvailableClaim: { type: Number, default: 0 },     // pending interest rewards
+  },
+  { timestamps: true }  // <-- moved inside as 2nd argument
 );
-
-
 
 const UserStack = mongoose.model('UserStack', userStackSchema);
 
