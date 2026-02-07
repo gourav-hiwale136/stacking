@@ -35,15 +35,15 @@ const Landing = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div className="bg-gray-50 p-6 rounded-xl text-center">
               <p className="text-sm text-gray-500">Total Staked</p>
-              <p className="text-2xl font-bold text-indigo-600">10,000</p>
+              <p className="text-2xl font-bold text-indigo-600">4</p>
             </div>
             <div className="bg-gray-50 p-6 rounded-xl text-center">
               <p className="text-sm text-gray-500">Active Users</p>
-              <p className="text-2xl font-bold text-green-600">120</p>
+              <p className="text-2xl font-bold text-green-600">4</p>
             </div>
             <div className="bg-gray-50 p-6 rounded-xl text-center">
               <p className="text-sm text-gray-500">Total Rewards</p>
-              <p className="text-2xl font-bold text-purple-600">1,200</p>
+              <p className="text-2xl font-bold text-purple-600">3006</p>
             </div>
           </div>
         </div>
