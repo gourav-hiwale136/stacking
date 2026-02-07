@@ -77,7 +77,7 @@ const name = currentUser?.name || currentUser?.email || "User";
 
                 {/* Optional: show user name */}
                 <span className="text-sm text-gray-600">
-                  Hi, {name}
+                  Hi, {name}!
                 </span>
               </>
             ) : (

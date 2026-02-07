@@ -7,6 +7,7 @@ import {
   addBalance,
   deleteStack,
   getStackedUser,
+  withdraw
 } from "../controllers/stackController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import allowRoles from "../middlewares/roleMiddleware.js";
@@ -18,7 +19,6 @@ stackRouter.post("/add/:userId", createStack);
 
 stackRouter.post("/stake", authMiddleware, allowRoles("user"), stacked);
 
-
 stackRouter.get("/get/:userId", authMiddleware, allowRoles("user"),getStack);
 
 stackRouter.post("/claim/:userId", claimRewards);
@@ -29,8 +29,9 @@ stackRouter.delete("/delete/:userId", authMiddleware,allowRoles("admin"),deleteS
 
 stackRouter.get("/admin/staked-users", authMiddleware,allowRoles("admin"),getStackedUser);
 
+stackRouter.post("/withdraw", authMiddleware, allowRoles("user"), withdraw);
+
 export default stackRouter;
 
 
-// // OPTIONAL: explicit stake route
-// router.post("/stack/stake", stakeHC);
+

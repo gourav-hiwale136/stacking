@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+
+  useEffect(() => {
+    setEmail("");
+    setPassword("");
+  }, []);
 
   const handleLogin = async (e) => {
   e.preventDefault();
@@ -26,6 +32,9 @@ console.log("Form Submitted");
       // Decode JWT to read role
       const payload = JSON.parse(atob(data.token.split(".")[1]));
       const userRole = payload.role;
+
+      setEmail("");
+        setPassword("");
 
       // Redirect based on role
       if (userRole === "admin") {

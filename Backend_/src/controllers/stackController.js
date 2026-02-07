@@ -287,6 +287,52 @@ const deleteStack = async (req, res) => {
   }
 };
 
+const withdraw = async (req, res) => {
+  try {
+    const { userId } = req.body; 
+
+    const stack = await UserStack.findOne({ userId });
+    if (!stack) {
+      return res.status(404).json({ message: "Stack not found" });
+    }
+
+    
+    const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
+    if (interest > 0) {
+      stack.AvailableClaim += interest;
+      stack.lastStakeUpdated = newLastStakeUpdated;
+    }
+
+    const totalAvailable = stack.balance + stack.AvailableClaim;
+
+    
+    const minStake = 500;
+    const maxWithdraw = totalAvailable - minStake;
+
+    if (maxWithdraw <= 0) {
+      return res.status(400).json({
+        message: `You must keep at least ${minStake} staked.`,
+      });
+    }
+
+    // Move everything above 500 to balance (simulate “withdraw”)
+    stack.balance = minStake;
+    stack.AvailableClaim = 0;
+    stack.totalEarned += stack.stake - minStake; // or log as withdrawn
+
+    await stack.save();
+
+    res.status(200).json({
+      message: "Withdraw successful",
+      withdrawnAmount: maxWithdraw,
+      remainingStake: minStake,
+      stack,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   createStack,
   stacked,
@@ -296,4 +342,5 @@ export {
   addBalance,
   deleteStack,
   getStackedUser,
+  withdraw
 };
