@@ -2,10 +2,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-export default function Navbar({}) {
+export default function Navbar({currentUser}) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+const name = currentUser?.name || currentUser?.email || "User";
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -38,8 +39,8 @@ export default function Navbar({}) {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="flex items-center text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
             >
               💰 StakingApp
@@ -48,10 +49,10 @@ export default function Navbar({}) {
 
           {/* Navigation Links */}
           <div className="flex items-center space-x-4">
-            {user ? (
+            {currentUser ? (
               /* 👇 LOGGED IN - Shows Admin + Dashboard + Logout */
               <>
-                {user.role === "admin" && (
+                {currentUser.role === "admin" && (
                   <Link
                     to="/admin"
                     className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
@@ -59,20 +60,25 @@ export default function Navbar({}) {
                     👑 Admin
                   </Link>
                 )}
-                
+
                 <Link
                   to="/dashboard"
                   className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   📊 Dashboard
                 </Link>
-                
+
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   🚪 Logout
                 </button>
+
+                {/* Optional: show user name */}
+                <span className="text-sm text-gray-600">
+                  Hi, {name}
+                </span>
               </>
             ) : (
               /* 👇 NOT LOGGED IN - Shows Login + Register */
@@ -96,4 +102,5 @@ export default function Navbar({}) {
       </div>
     </nav>
   );
+  
 }

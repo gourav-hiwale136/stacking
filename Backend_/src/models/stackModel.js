@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const userStackSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    balance: { type: Number, default: 100 },  
+    balance: { type: Number, default: 500 },  
     totalEarned: { type: Number, default: 0 },
     claimedRewards: { type: Number, default: 0 },
     stake: { type: Number, default: 0 },              // amount currently “locked” for interest

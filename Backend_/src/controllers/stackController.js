@@ -16,7 +16,7 @@ const createStack = async (req, res) => {
     // 2️⃣ Create
     const stack = await UserStack.create({
   userId,
-  balance: balance ?? 100,
+  balance: balance ?? 500,
   stake: 0, // 👈 auto‑stake all balance
   lastStakeUpdated: null // 👈 start interest timer
 });
@@ -39,12 +39,23 @@ const stacked = async (req, res) => {
   try {
     const { userId, amount } = req.body;
 
-    const stack = await UserStack.findOne({ userId });
+    // Find OR create stack
+    let stack = await UserStack.findOne({ userId });
     if (!stack) {
-      return res.status(404).json({
-        message: "No stack found for this user",
+      console.log("Creating new stack for userId:", userId);
+      stack = await UserStack.create({
+        userId,
+        balance: 500,
+        stake: 0,
+        AvailableClaim: 0,
+        totalEarned: 0,
+        claimedRewards: 0,
+        lastStakeUpdated: null,
       });
     }
+
+    console.log("Found stack:", stack); // 👈 log this
+
 
     const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
     if (interest > 0) {
@@ -68,6 +79,7 @@ const stacked = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -102,14 +114,20 @@ const getStack = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const stack = await UserStack.findOne({ userId });
+    let stack = await UserStack.findOne({ userId });
     if (!stack) {
-      return res.status(404).json({
-        message: "No stack found for this user",
+      // Create default empty stack
+      stack = await UserStack.create({
+        userId,
+        balance: 500,
+        stake: 0,
+        AvailableClaim: 0,
+        totalEarned: 0,
+        claimedRewards: 0,
+        lastStakeUpdated: null,
       });
     }
 
-    // 👇 apply pending interest before returning
     const { amount, newLastStakeUpdated } = ApplyInterest(stack);
     if (amount > 0) {
       stack.AvailableClaim += amount;
@@ -126,10 +144,11 @@ const getStack = async (req, res) => {
 };
 
 
+
 // 4. Claim rewards (user clicks “Claim”)
 const claimRewards = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
 
     const stack = await UserStack.findOne({ userId });
     if (!stack) {
@@ -174,13 +193,13 @@ const claimRewards = async (req, res) => {
 
 
 // 5. Update balance (for example, when user stakes more money)
-const updateBalance = async (req, res) => {
+const addBalance = async (req, res) => {
   try {
     const { userId, newBalance } = req.body;
 
     if (!newBalance || newBalance <= 0) {
       return res.status(400).json({
-        message: "New balance",
+        message: "Invalid amount",
       });
     }
 
@@ -191,27 +210,24 @@ const updateBalance = async (req, res) => {
       });
     }
 
-    // 👇 apply pending interest before changing stake
+    // Apply pending interest before changing anything
     const { amount: interest, newLastStakeUpdated } = ApplyInterest(stack);
     if (interest > 0) {
       stack.AvailableClaim += interest;
       stack.lastStakeUpdated = newLastStakeUpdated;
     }
 
-    // 👇 treat newBalance as additional stake
-    stack.stake += newBalance;
+    // Only update balance, NOT stake
     stack.balance += newBalance;
-
     stack.lastStakeUpdated = new Date(); // reset timer
 
     await stack.save();
 
     res.status(200).json({
-      message: "Balance and stake updated successfully",
-      previousStake: stack.stake - newBalance,
+      message: "Balance updated successfully",
       addedAmount: newBalance,
-      currentStake: stack.stake,
       currentBalance: stack.balance,
+      currentStake: stack.stake,
     });
   } catch (error) {
     res.status(500).json({
@@ -219,6 +235,7 @@ const updateBalance = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -246,7 +263,8 @@ const deleteStack = async (req, res) => {
 
  const getStackedUser = async (req, res) => {
   try {
-    const stackedUsers = await UserStack.find()
+    // Only return UserStack documents where stake > 0
+    const stackedUsers = await UserStack.find({ stake: { $gt: 0 } })
       .populate("userId", "username email role");
 
     if (!stackedUsers || stackedUsers.length === 0) {
@@ -268,13 +286,14 @@ const deleteStack = async (req, res) => {
     });
   }
 };
+
 export {
   createStack,
   stacked,
   ApplyInterest,
   getStack,
   claimRewards,
-  updateBalance,
+  addBalance,
   deleteStack,
   getStackedUser,
 };

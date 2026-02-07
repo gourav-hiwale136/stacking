@@ -4,7 +4,7 @@ import {
   stacked,
   getStack,
   claimRewards,
-  updateBalance,
+  addBalance,
   deleteStack,
   getStackedUser,
 } from "../controllers/stackController.js";
@@ -16,13 +16,14 @@ const stackRouter = express.Router();
 
 stackRouter.post("/add/:userId", createStack);
 
-stackRouter.post("/stake/:userId", authMiddleware, allowRoles("user"), stacked);
+stackRouter.post("/stake", authMiddleware, allowRoles("user"), stacked);
+
 
 stackRouter.get("/get/:userId", authMiddleware, allowRoles("user"),getStack);
 
 stackRouter.post("/claim/:userId", claimRewards);
 
-stackRouter.put("/update-balance", updateBalance)
+stackRouter.put("/update-balance",authMiddleware, allowRoles("user"), addBalance);
 
 stackRouter.delete("/delete/:userId", authMiddleware,allowRoles("admin"),deleteStack);
 

@@ -8,6 +8,7 @@ const Login = () => {
 
   const handleLogin = async (e) => {
   e.preventDefault();
+console.log("Form Submitted");
 
   try {
     const res = await fetch("http://localhost:4444/api/auth/login", {
@@ -20,6 +21,7 @@ const Login = () => {
     if (data.token) {
       // Save token
       localStorage.setItem("token", data.token);
+      
 
       // Decode JWT to read role
       const payload = JSON.parse(atob(data.token.split(".")[1]));

@@ -17,6 +17,16 @@ const registerUser = async (req, res) => {
             role 
         });
 
+    //     const stack = await UserStack.create({
+    //   userId: user._id,
+    //   balance: 500,
+    //   stake: 0,
+    //   AvailableClaim: 0,
+    //   totalEarned: 0,
+    //   claimedRewards: 0,
+    //   lastStakeUpdated: null,
+    // });
+
 //         await UserStack.create({
 //         userId: user._id,
 //         balance: 100,

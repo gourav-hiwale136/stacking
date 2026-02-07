@@ -5,6 +5,7 @@ export default function Dashboard() {
   const [stack, setStack] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stakeAmount, setStakeAmount] = useState("");
+  const [addBalanceAmount, setAddBalanceAmount] = useState("");
 
   useEffect(() => {
     fetchStack();
@@ -37,49 +38,87 @@ export default function Dashboard() {
   };
 
   const handleStake = async (e) => {
-    e.preventDefault();
-    const amount = Number(stakeAmount);
-    if (!amount || amount <= 0) return;
+  e.preventDefault();
+  const amount = Number(stakeAmount);
+  if (!amount || amount <= 0) return;
 
+  try {
+    const token = localStorage.getItem("token");
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.userId || payload.id;
+
+    const res = await fetch("http://localhost:4444/api/stack/stake", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, amount }),
+    });
+
+    if (res.ok) {
+      fetchStack();
+      setStakeAmount("");
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleClaim = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4444/api/stack/stake", {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const userId = payload.userId || payload.id;
+
+      const res = await fetch(`http://localhost:4444/api/stack/claim/${userId}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ amount }),
       });
 
       if (res.ok) {
-        fetchStack(); // refresh data
-        setStakeAmount("");
+        fetchStack();
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleClaim = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4444/api/stack/claim", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
-      if (res.ok) {
-        fetchStack(); // refresh data
-      }
-    } catch (err) {
-      console.error(err);
+
+  const handleAddBalance = async (e) => {
+  e.preventDefault();
+  const amount = Number(addBalanceAmount);
+  if (!amount || amount <= 0) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch("http://localhost:4444/api/stack/update-balance", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({userId: stack.userId, newBalance: amount }),
+    });
+
+    if (res.ok) {
+      fetchStack(); // refresh data
+      setAddBalanceAmount(""); // clear only Add Balance field
+    } else {
+      const data = await res.json().catch(() => ({}));
+      console.error("Add balance error:", data);
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  if (loading) return <div className="p-6 text-center">Loading...</div>;
+
+
+  // if (loading) return <div className="p-6 text-center">Loading...</div>;
   if (!stack) return <div className="p-6 text-center text-red-500">Controls By User Only</div>;
 
   return (
@@ -108,29 +147,46 @@ export default function Dashboard() {
 
       {/* ACTION SECTION - Stake + Claim */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* STAKE FORM */}
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Stake </h2>
-          <form onSubmit={handleStake} className="space-y-4">
-            <input
-              type="number"
-              value={stakeAmount}
-              onChange={(e) => setStakeAmount(e.target.value)}
-              placeholder="Enter amount to stake"
-              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              min="1"
-              max={stack.balance}
-              required
-            />
-            <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 font-semibold"
-              disabled={!stakeAmount || Number(stakeAmount) > stack.balance}
-            >
-              Stake
-            </button>
-          </form>
-        </div>
+       {/* STAKE FORM */}
+<form onSubmit={handleStake} className="space-y-4">
+  <input
+    type="number"
+    value={stakeAmount}
+    onChange={(e) => setStakeAmount(e.target.value)}
+    placeholder="Enter amount to stake"
+    className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
+    min="1"
+    max={stack.balance}
+    required
+  />
+  <button
+    type="submit"
+    className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 font-semibold"
+    disabled={!stakeAmount || Number(stakeAmount) > stack.balance}
+  >
+    Stake
+  </button>
+</form>
+
+{/* ADD BALANCE SECTION */}
+<form onSubmit={handleAddBalance} className="space-y-4">
+  <input
+    type="number"
+    value={addBalanceAmount}
+    onChange={(e) => setAddBalanceAmount(e.target.value)}
+    placeholder="Enter amount to add"
+    className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-indigo-500"
+    min="1"
+    required
+  />
+  <button
+    type="submit"
+    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 font-semibold"
+  >
+    Add Balance
+  </button>
+</form>
+
 
         {/* CLAIM BUTTON */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
@@ -146,6 +202,7 @@ export default function Dashboard() {
             Claim {stack.AvailableClaim} 
           </button>
         </div>
+
       </div>
     </div>
   );
