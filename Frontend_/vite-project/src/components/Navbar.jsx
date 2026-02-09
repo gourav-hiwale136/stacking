@@ -1,47 +1,26 @@
 // components/Navbar.jsx
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
 
-export default function Navbar({currentUser}) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+const Navbar = ({ currentUser, onLogout }) => {
   const navigate = useNavigate();
-const name = currentUser?.name || currentUser?.email || "User";
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        // Decode JWT to check role
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({
-          id: payload.userId || payload.id,
-          role: payload.role || payload.userRole,
-          email: payload.email
-        });
-      } catch (error) {
-        console.error("Invalid token");
-        localStorage.removeItem("token");
-      }
-    }
-    setLoading(false);
-  }, []);
+  const name = currentUser?.name || currentUser?.email || "User";
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
+    if (onLogout) {
+      onLogout();
+    }
     navigate("/login");
   };
 
   return (
-    <nav className="bg-white border-b shadow-sm sticky top-0 z-50">
+    <nav className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link
               to="/"
-              className="flex items-center text-xl font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+              className="flex items-center text-xl font-bold bg-gradient-to-r from-orange-400 via-pink-400 to-blue-400 bg-clip-text text-transparent hover:scale-105 transition-all duration-300"
             >
               💰 StakingApp
             </Link>
@@ -50,50 +29,52 @@ const name = currentUser?.name || currentUser?.email || "User";
           {/* Navigation Links */}
           <div className="flex items-center space-x-4">
             {currentUser ? (
-              /* 👇 LOGGED IN - Shows Admin + Dashboard + Logout */
+              /* LOGGED IN */
               <>
                 {currentUser.role === "admin" && (
                   <Link
                     to="/admin"
-                    className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow-lg transition-all duration-200"
+                    className="group relative px-4 py-2 text-sm font-semibold text-gray-100 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 hover:border-orange-400/50 hover:bg-slate-800/70 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-[1.02]"
                   >
-                    👑 Admin
+                    <span>👑 Admin</span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 to-orange-600/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-all duration-500 -z-10" />
                   </Link>
                 )}
 
                 <Link
                   to="/dashboard"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all duration-300 hover:scale-105"
                 >
                   📊 Dashboard
                 </Link>
 
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                  className="group relative px-4 py-2 text-sm font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 backdrop-blur-sm rounded-xl border border-rose-500/30 hover:border-rose-400/50 transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg"
                 >
-                  🚪 Logout
+                  <span>🚪 Logout</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 to-pink-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition-all duration-500 -z-10" />
                 </button>
 
-                {/* Optional: show user name */}
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-400 bg-slate-800/30 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-700/50">
                   Hi, {name}!
                 </span>
               </>
             ) : (
-              /* 👇 NOT LOGGED IN - Shows Login + Register */
+              /* NOT LOGGED IN */
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white hover:bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/30 hover:border-slate-600/50 transition-all duration-300 hover:scale-105"
                 >
-                  🔑 Login
+                  🔑 Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                  className="group relative px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 backdrop-blur-sm rounded-xl border border-indigo-500/50 hover:border-indigo-400/70 hover:from-indigo-600 hover:to-purple-600 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
                 >
-                  📝 Sign Up
+                  <span>📝 Sign Up</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/30 to-purple-500/30 rounded-xl blur opacity-75 -z-10" />
                 </Link>
               </>
             )}
@@ -102,5 +83,6 @@ const name = currentUser?.name || currentUser?.email || "User";
       </div>
     </nav>
   );
-  
-}
+};
+
+export default Navbar;

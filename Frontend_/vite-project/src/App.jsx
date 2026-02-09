@@ -12,7 +12,7 @@ import Profile from "./pages/Profile";
 const App = () => {
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
+  const refreshUser = () => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
@@ -25,16 +25,32 @@ const App = () => {
         });
       } catch (err) {
         localStorage.removeItem("token");
+        setCurrentUser(null);
       }
+    } else {
+      setCurrentUser(null);
     }
+  };
+
+  useEffect(() => {
+    refreshUser();
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setCurrentUser(null);
+  };
 
   return (
     <BrowserRouter>
-      <Navbar currentUser={currentUser} />
+      <Navbar
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        refreshUser={refreshUser}
+      />
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login refreshUser={refreshUser} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
